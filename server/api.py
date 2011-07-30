@@ -9,12 +9,50 @@ import config
 
 class JamSessionConnection(tornadio.SocketConnection):
   """Base JamSession connection object"""
+  scores =        { } # key: scoreId, val: [userId]
+  users =         { } # key: userId,  val: JamSessionConnection
+  connections = set() # item: JamSessionConnection
+
   def on_open(self, *args, **kwargs):
+    connections.add(self)
+    self.send('Welcome!')
+
+  def _init(userId):
     pass
 
-  def on_message(self, message):
-    for p in self.participants:
-      p.send(message)
+  def _editScore(userId,scoreId):
+    pass
+  
+  def _addNote(userId,scoreId,note):
+    pass
+
+  def _addMeasureBlock(userId,scoreId,measureBlock):
+    pass
+
+  def _removeNote(userId,scoreId,note):
+    pass
+
+  def _removeMeasureBlock(userId,scoreId):
+    pass
+
+  def _getScore(userId,scoreId):
+    pass
+
+  def on_message(self, m):
+    if m.method == 'init':
+      self._init(m.userId)
+    elif m.method == 'editScore':
+      self._editScore(m.userId,m.scoreId)
+    elif m.method == 'addNote':
+      self._addNote(m.userId,m.scoreId,m.note)
+    elif m.method == 'removeNote':
+      self._removeNote(m.userId,m.scoreId,m.note)
+    elif m.method == 'addMeasureBlock':
+      self._addMeasureBlock(m.userId,m.scoreId,m.measureBlock)
+    elif m.method == 'removeMeasureBlock':
+      self._removeMeasureBlock(m.userId,m.scoreId,m.measureBlock)
+    elif m.method == 'getScore':
+      self._getScore(m.userId,m.scoreId)
 
   def on_close(self):
     self.participants.remove(self)
