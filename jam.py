@@ -2,6 +2,7 @@ import os.path
 from collections import defaultdict
 import logging
 from cPickle import dumps, loads
+import traceback
 
 import tornado.web
 from tornado.options import options
@@ -20,34 +21,38 @@ options.debug = getattr(config, 'debug', True)
 ROOT_DIR = os.path.dirname(__file__)
 R = redis.Redis('youstache.com', port=6379, db=0)
 
-def redisGetMeasureBlocks(score):
-  key = '.'.join([score, 'measureBlocks'])
-  value = R.get(key)
-  if value: return loads(value)
-  else: return []
-
-def redisGetNotes(score):
-  key = '.'.join([score, 'notes'])
-  value = R.get(key)
-  if value: return loads(value)
-  else: return []
-
-def redisSetMeasureBlocks(score, measureBlocks):
-  key = '.'.join([score, 'measureBlocks'])
-  R.set(key, dumps(measureBlocks))
-
-def redisSetNotes(score, notes):
-  key = '.'.join([score, 'note'])
-  R.set(key, dumps(notes))
 
 class JamSessionConnection(tornadio.SocketConnection):
   """Base JamSession connection object"""
   scores = defaultdict(set) # key: score string, val: {JamSessionConnection}
 
+  @property
+  def notes(self):
+    key = '.'.join([self.score, 'notes'])
+    value = R.get(key)
+    if value: return loads(value)
+    else: return []
+    
+  @notes.setter
+  def notes(self, notes):
+    key = '.'.join([self.score, 'notes'])
+    R.set(key, dumps(notes))
+
+  @property
+  def measures(self):
+    key = '.'.join([self.score, 'measureBlocks'])
+    value = R.get(key)
+    if value: return loads(value)
+    else: return []
+
+  @measures.setter
+  def measures(self, measureBlocks):
+    key = '.'.join([self.score, 'measureBlocks'])
+    R.set(key, dumps(measureBlocks))
+
   def on_open(self, *args, **kwargs):
     self.score, self.user_name = kwargs['extra'].split('-')
     self.scores[self.score].add(self)
-    self.send('Welcome!')
     
   def _broadcast(self, package):
     for conn in self.scores[self.score]:
@@ -64,79 +69,90 @@ class JamSessionConnection(tornadio.SocketConnection):
   def __measure_cmp(measure):
     return measure['onsetTime']
 
-  def _addNote(self, m, note):
-    key = '.'.join([self.score, 'notes'])
-    notes = loads(R.get(key))
+  def _addNote(self, note):
+    notes = self.notes
     notes.append(note)
-    notes.sort(key=self.__note_cmp)
-    R.set(key, dumps(notes))
+    self.notes = notes
     return note
 
-  def _removeNote(self, m, note):
-    key = '.'.join([self.score, 'notes'])
-    notes = loads(R.get(key))
+  def _removeNote(self, note):
+    notes = self.notes
     try:
       notes.remove(note)
-      R.set(key, dumps(notes))
+      self.notes = notes
       return note
     except ValueError:
       pass # Cannot Find Note  
   
-  def _addMeasureBlock(self, m, measureBlock):
-    key = '.'.join([self.score, 'measureBlocks'])
-    measures = R.get(key)
+  def _addMeasureBlock(self, measureBlock):
+    measures = self.measures
     measures.append(measureBlock)
-    measures.sort(key=self.__measure_cmp)
-    R.set(key, dumps(measures))
+    self.measures = measures
     return measureBlock
 
-  def _removeMeasureBlock(self, m, measureBlock):
-    key = '.'.join([self.score, 'measureBlocks'])
-    measures = loads(R.get(key))
+  def _removeMeasureBlock(self, measureBlock):
+    measures = self.measures
     try:
       measures.remove(measureBlock)
-      R.set(key, dumps(measures))
+      self.measures = measures
       return measureBlock
     except ValueError:
       pass
 
   def _getScore(self):
     # TODO: send score to user
-    measureBlocks = redisGetMeasureBlocks(self.score)
-    notes = redisGetNotes(self.score)
+    measures = list(self.measures)
+    notes = list(self.notes)
+    notes.sort(key=self.__note_cmp)
+    measures.sort(key=self.__measure_cmp)
     package = {'name' : self.score,
-               'measureBlocks' : measureBlocks,
+               'measureBlocks' : measures,
                'notes' : notes}
     return package
 
+  def _clearScore(self):
+    self.notes = []
+    self.measures = []
+  
   def on_message(self, m):
-    if m['method'] == 'getScore':
-      package = self._getScore()
-      if package: self.send(package)
-    else:
-      if m['method'] == 'addNote':
-        package = self._addNote(m, m['note'])
-      elif m['method'] == 'removeNote':
-        package = self._removeNote(m, m['note'])
-      elif m['method'] == 'addMeasureBlock':
-        package = self._addMeasureBlock(m, m['measureBlock'])
-      elif m['method'] == 'removeMeasureBlock':
-        package = self._removeMeasureBlock(m, m['measureBlock'])
-      elif m['method'] == 'getScore':
+    try:
+      m = json_decode(m)
+      logging.info(m)
+      if m['method'] == 'getScore':
         package = self._getScore()
-      else: return
-      if package: self._broadcast(package)
+        if package: self.send(json_encode(package))
+        return
+      elif m['method'] == 'addNote':
+        package = self._addNote(m['note'])
+      elif m['method'] == 'removeNote':
+        package = self._removeNote(m['note'])
+      elif m['method'] == 'addMeasureBlock':
+        package = self._addMeasureBlock(m['measureBlock'])
+      elif m['method'] == 'removeMeasureBlock':
+        package = self._removeMeasureBlock(m['measureBlock'])
+      elif m['method'] == 'clearScore':
+        package = self._clearScore()
+      else:
+        raise ValueError("Didn't specify valid method")
+      if package: self._broadcast(json_encode(package))
+    except Exception, e:
+      logging.error(traceback.print_exc())
+      self.send(json_encode("Python exception: %s" % str(e)))
       
   def on_close(self):
     self.scores[self.score].remove(self)
     for p in self.scores[self.score]:
       p.send("A user has left.")
 
-
+class UnittestHandler(tornado.web.RequestHandler):
+  def get(self):
+      self.render('unittest.html')
+      
 class Application(tornado.web.Application):
   def __init__(self):
     Router = tornadio.get_router(JamSessionConnection, resource='JamSessionSocket', extra_re=r'\S+', extra_sep='/')
     handlers = [
+      (r"/", UnittestHandler),
       Router.route(),
       ]
     settings = dict(
