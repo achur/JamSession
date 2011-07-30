@@ -38,25 +38,36 @@ class JamSessionConnection(tornadio.SocketConnection):
         
   def _addNote(self, m, note):
     key = '.'.join([self.score, 'notes'])
-    value = dumps(note)
-    R.set(key, value)
+    R.set(key, dumps(note))
     return note
 
   def _addMeasureBlock(self, m, measureBlock):
     key = '.'.join([self.score, 'measureBlocks'])
-    value = dumps(measureBlock)
-    R.set(key, value)
+    R.set(key, dumps(measureBlock))
     return measureBlock
     
-  def _removeNote(self,m,note):
+  def _removeNote(self, m, note):
     key = '.'.join([self.score, 'notes'])
     notes = loads(R.get(key))
-    note.find(lambda x: x[''])
-    pass
+    try:
+      notes.remove(note)
+      R.set(key, dumps(notes))
+      return note
+    except ValueError:
+      pass # Cannot Find Note
 
-  def _removeMeasureBlock(self,m,measureBlock):
-    # TODO: remove measureBlock from score
-    pass
+  def __note_cmp(note):
+    note['start']
+  
+  def _removeMeasureBlock(self, m, measureBlock):
+    key = '.'.join([self.score, 'measureBlocks'])
+    measures = loads(R.get(key))
+    try:
+      measures.remove(measureBlock)
+      R.set(key, dumps(measures))
+      return measureBlock
+    except ValueError:
+      pass
 
   def _getScore(self):
     # TODO: send score to user
