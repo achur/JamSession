@@ -1,0 +1,22 @@
+<script src="http://localhost:1234/socket.io/socket.io.js"></script>
+<script src="/lib/classy.js"></script>
+<script src="/lib/dsp.js"></script>
+<script src="/src/score.js"></script>
+<script src="/src/player.js"></script>
+<script src="/src/keyboard.js"></script>
+<script src="/lib/jquery.min.js"></script>
+
+
+<script>
+var score = new JamScore("test");
+var synth = new JamSynth();
+var vKeyboard = new VirtualKeyboard(window,synth);
+</script>
+
+<body>
+<div id="a" style="height:90px;width:80px;background-color:green" tabindex="0">
+</div>
+<script>
+vKeyboard.register(document.getElementById("a"));
+</script>
+</body>
