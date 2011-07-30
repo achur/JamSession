@@ -3,9 +3,6 @@ from collections import defaultdict
 import logging
 from cPickle import dumps, loads
 import traceback
-import threading
-import Queue
-
 
 import tornado.web
 from tornado.options import options
@@ -16,60 +13,44 @@ from tornado.escape import json_encode, json_decode
 
 import redis
 
-import config
+try:
+  import config
+except ImportError:
+  config = {}
 logging.getLogger().setLevel(logging.DEBUG)
 options.port = getattr(config, 'port', 8888)
 options.debug = getattr(config, 'debug', True)
 
 ROOT_DIR = os.path.dirname(__file__)
 R = redis.Redis('youstache.com', port=6379, db=0)
-REDIS_QUEUE = Queue.Queue()
-
-class RedisThread(threading.Thread):
-  def __init__(self, queue):
-    threading.Thread.__init__(self)
-    self.queue = queue
-
-  def run(self):
-    while True:
-      call_func, args, kwargs = self.queue.get(block=True)
-      call_func(*args, **kwargs)
-      self.queue.task_done()
-
-REDIS_THREAD = RedisThread(REDIS_QUEUE)
-REDIS_THREAD.setDaemon(True)
-REDIS_THREAD.start()
 
 
-
-
-
-class JamSessionConn(tornadio.SocketConnection):
+class JamSessionConnection(tornadio.SocketConnection):
   """Base JamSession connection object"""
   scores = defaultdict(set) # key: score string, val: {JamSessionConnection}
-  
-  @classmethod
-  def get_notes(cls, score):
-    key = '.'.join([score, 'notes'])
+
+  @property
+  def notes(self):
+    key = '.'.join([self.score, 'notes'])
     value = R.get(key)
     if value: return loads(value)
     else: return []
     
-  @classmethod
-  def set_notes(cls, score, notes):
-    key = '.'.join([score, 'notes'])
+  @notes.setter
+  def notes(self, notes):
+    key = '.'.join([self.score, 'notes'])
     R.set(key, dumps(notes))
 
-  @classmethod
-  def get_measures(cls, score):
-    key = '.'.join([score, 'measureBlocks'])
+  @property
+  def measures(self):
+    key = '.'.join([self.score, 'measureBlocks'])
     value = R.get(key)
     if value: return loads(value)
     else: return []
 
-  @classmethod
-  def set_measures(cls, score, measureBlocks):
-    key = '.'.join([score, 'measureBlocks'])
+  @measures.setter
+  def measures(self, measureBlocks):
+    key = '.'.join([self.score, 'measureBlocks'])
     R.set(key, dumps(measureBlocks))
 
   def on_open(self, *args, **kwargs):
@@ -92,49 +73,39 @@ class JamSessionConn(tornadio.SocketConnection):
     return measure['onsetTime']
 
   def _addNote(self, note):
-    def task(score, note):
-      print score
-      print note
-      notes = JamSessionConn.get_notes(score)
-      notes.append(note)
-      JamSessionConn.set_notes(score, notes)
-    REDIS_QUEUE.put((task, (self.score, note), {}))
+    notes = self.notes
+    notes.append(note)
+    self.notes = notes
     return note
 
   def _removeNote(self, note):
-    def task(score, note):
-      try:
-        notes = JamSessionConn.get_notes(score)
-        notes.remove(note)
-        JamSessionConn.set_notes(score, notes)
-      except ValueError:
-        pass # Cannot Find Note  
-    REDIS_QUEUE.put((task, (self.score, note), {}))
-    return note
-      
+    notes = self.notes
+    try:
+      notes.remove(note)
+      self.notes = notes
+      return note
+    except ValueError:
+      pass # Cannot Find Note  
+  
   def _addMeasureBlock(self, measureBlock):
-    def task(score, measure):
-      measures = JamSessionConn.get_measures(score)
-      measures.append(measure)
-      JamSessionConn.set_measures(score, measures)
-    REDIS_QUEUE.put((task, (self.score, measureBlock), {}))
+    measures = self.measures
+    measures.append(measureBlock)
+    self.measures = measures
     return measureBlock
 
   def _removeMeasureBlock(self, measureBlock):
-    def task(score, measure):
-      try:
-        measures = JamSessionConn.get_measures(score)
-        measures.remove(measure)
-        JamSessionConn.set_measures(score, measures)
-      except ValueError:
-        pass
-    REDIS_QUEUE.put((task, (self.score, measureBlock), {}))
-    return measureBlock
-      
+    measures = self.measures
+    try:
+      measures.remove(measureBlock)
+      self.measures = measures
+      return measureBlock
+    except ValueError:
+      pass
+
   def _getScore(self):
     # TODO: send score to user
-    measures = list(JamSessionConn.get_measures(self.score))
-    notes = list(JamSessionConn.get_measures(self.notes))
+    measures = list(self.measures)
+    notes = list(self.notes)
     notes.sort(key=self.__note_cmp)
     measures.sort(key=self.__measure_cmp)
     package = {'name' : self.score,
@@ -179,12 +150,16 @@ class JamSessionConn(tornadio.SocketConnection):
 class UnittestHandler(tornado.web.RequestHandler):
   def get(self):
       self.render('unittest.html')
+
+class ScoreHandler(tornado.web.RequestHandler):
+  def get(self):
       
 class Application(tornado.web.Application):
   def __init__(self):
-    Router = tornadio.get_router(JamSessionConn, resource='JamSessionSocket', extra_re=r'\S+', extra_sep='/')
+    Router = tornadio.get_router(JamSessionConnection, resource='JamSessionSocket', extra_re=r'\S+', extra_sep='/')
     handlers = [
-      (r"/", UnittestHandler),
+      (r'/', UnittestHandler),
+      (r'/(.*?)', ScoreHandler),
       Router.route(),
       ]
     settings = dict(
