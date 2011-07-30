@@ -150,12 +150,16 @@ class JamSessionConnection(tornadio.SocketConnection):
 class UnittestHandler(tornado.web.RequestHandler):
   def get(self):
       self.render('unittest.html')
+
+class ScoreHandler(tornado.web.RequestHandler):
+  def get(self):
       
 class Application(tornado.web.Application):
   def __init__(self):
     Router = tornadio.get_router(JamSessionConnection, resource='JamSessionSocket', extra_re=r'\S+', extra_sep='/')
     handlers = [
-      (r"/", UnittestHandler),
+      (r'/', UnittestHandler),
+      (r'/(.*?)', ScoreHandler),
       Router.route(),
       ]
     settings = dict(
