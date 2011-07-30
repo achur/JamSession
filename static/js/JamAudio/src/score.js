@@ -52,6 +52,36 @@ var JamScore;
 		{
 			// Re-sort
 			this.notes().sort( function(a,b) { return (a.start - b.start); } );
+		},
+		
+		changeNote: function(originalNote, newNote)
+		{
+			this.removeNote(originalNote);
+			this.appendNote(note);
+		},
+		
+		removeNote: function(note)
+		{
+			var index = this._getNoteIndex(note);
+			if(index >= 0)
+			{
+				this.notes().splice(index, 1);
+			}
+		},
+		
+		_getNoteIndex(note)
+		{
+			var start = note.start();
+			for(var i = 0; i < this.notes().length; ++i)
+			{
+				var curStart = this.notes()[i].start();
+				if(curStart >= start)
+				{
+					if(curStart > start) return -1;
+					return this.notes()[i].value() === note.value() && this.notes()[i].length() === note.length() && this.notes()[i].instrument() === note.instrument() && curStart === start;
+				}
+			}
+			return -1;
 		}
 	});
 	
