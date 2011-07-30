@@ -1,11 +1,14 @@
 import os.path
 
 import tornado.web
+from tornado.options import define, options
 import tornadio
 import tornadio.router
 import tornadio.server
 
 import config
+options.port = getattr(config, 'port', 8888)
+options.debug = getattr(config, 'debug', True)
 
 ROOT_DIR = os.path.dirname(__file__)
 
@@ -61,21 +64,32 @@ class JamSessionConnection(tornadio.SocketConnection):
     for p in self.participants:
       p.send("A user has left.")
 
-#use the routes classmethod to build the correct resource
-ChatRouter = tornadio.get_router(ChatConnection)
 
-#configure the Tornado application
-application = tornado.web.Application(
-  [(r"/", IndexHandler), ChatRouter.route()],
-  enabled_protocols = ['websocket',
-                       'xhr-multipart',
-                       'xhr-polling'],
-  socket_io_port = 8001
-)
+class Application(tornado.web.Application):
+  def __init__(self):
+    Router = tornadio.get_router(JamSessionConnection, resource='socket', extra_re=r'\S+', extra_sep='/')
+    handlers = [
+      Router.route(),
+      ]
+    settings = dict(
+      cookie_secret="12oETzKXQAG5OkPL5gEmGeJJFuYh7EQQp2XdTP1o/Vo=",
+      template_path=os.path.join(os.path.dirname(__file__), "templates"),
+      static_path=os.path.join(os.path.dirname(__file__), "static"),
+      xsrf_cookies=False,
+      enabled_protocols=['websocket', 'xhr-multipart', 'xhr-polling'],
+      debug=options.debug,
+      socket_io_port=options.port
+      )
+    tornado.web.Application.__init__(self, handlers, **settings)
 
-if __name__ == "__main__":
+def main():
   import logging
   logging.getLogger().setLevel(logging.DEBUG)
+  tornado.options.parse_command_line()
+  http_server = tornado.httpserver.HTTPServer(Application())
+  http_server.listen(options.port)
+  tornado.ioloop.IOLoop.instance().start()
 
-  tornadio.server.SocketServer(application)
-    
+
+if __name__ == "__main__":
+  main()
