@@ -55,17 +55,23 @@ class JamSessionConnection(tornadio.SocketConnection):
         conn.send(package)
       except:
         logging.error("Error sending message", exc_info=True)
-        
+
+  @staticmethod
+  def __note_cmp(note):
+    return note['start']
+
+  @staticmethod
+  def __measure_cmp(measure):
+    return measure['onsetTime']
+
   def _addNote(self, m, note):
     key = '.'.join([self.score, 'notes'])
-    R.set(key, dumps(note))
+    notes = loads(R.get(key))
+    notes.append(note)
+    notes.sort(key=self.__note_cmp)
+    R.set(key, dumps(notes))
     return note
 
-  def _addMeasureBlock(self, m, measureBlock):
-    key = '.'.join([self.score, 'measureBlocks'])
-    R.set(key, dumps(measureBlock))
-    return measureBlock
-    
   def _removeNote(self, m, note):
     key = '.'.join([self.score, 'notes'])
     notes = loads(R.get(key))
@@ -74,11 +80,16 @@ class JamSessionConnection(tornadio.SocketConnection):
       R.set(key, dumps(notes))
       return note
     except ValueError:
-      pass # Cannot Find Note
-
-  def __note_cmp(note):
-    note['start']
+      pass # Cannot Find Note  
   
+  def _addMeasureBlock(self, m, measureBlock):
+    key = '.'.join([self.score, 'measureBlocks'])
+    measures = R.get(key)
+    measures.append(measureBlock)
+    measures.sort(key=self.__measure_cmp)
+    R.set(key, dumps(measures))
+    return measureBlock
+
   def _removeMeasureBlock(self, m, measureBlock):
     key = '.'.join([self.score, 'measureBlocks'])
     measures = loads(R.get(key))
