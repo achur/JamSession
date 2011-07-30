@@ -1,5 +1,7 @@
 import os.path
 from collections import defaultdict
+import logging
+from cPickle import dumps, loads
 
 import tornado.web
 from tornado.options import options
@@ -9,7 +11,6 @@ import tornadio.server
 from tornado.escape import json_encode, json_decode
 
 import redis
-import logging
 
 import config
 logging.getLogger().setLevel(logging.DEBUG)
@@ -35,18 +36,24 @@ class JamSessionConnection(tornadio.SocketConnection):
       except:
         logging.error("Error sending message", exc_info=True)
         
-  def _addNote(self,m,note):
-    # TODO: add note to score
+  def _addNote(self, m, note):
+    key = '.'.join([self.score, 'notes'])
+    value = dumps(note)
+    R.set(key, value)
+    return note
+
+  def _addMeasureBlock(self, m, measureBlock):
+    key = '.'.join([self.score, 'measureBlocks'])
+    value = dumps(measureBlock)
+    R.set(key, value)
+    return measureBlock
+    
+  def _removeNote(self,m,note):
+    key = '.'.join([self.score, 'notes'])
+    notes = loads(R.get(key))
+    note.find(lambda x: x[''])
     pass
 
-  def _addMeasureBlock(self,m,measureBlock):
-    # TODO: add measureBlock to score
-    pass
-  
-  def _removeNote(self,m,note):
-    # TODO: remove note from score
-    pass
-  
   def _removeMeasureBlock(self,m,measureBlock):
     # TODO: remove measureBlock from score
     pass
