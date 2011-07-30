@@ -1,4 +1,4 @@
-from os import path as op
+import os.path
 
 import tornado.web
 import tornadio
@@ -7,6 +7,8 @@ import tornadio.server
 
 import config
 
+ROOT_DIR = os.path.dirname(__file__)
+
 class JamSessionConnection(tornadio.SocketConnection):
   """Base JamSession connection object"""
   scores =        { } # key: scoreId, val: [userId]
@@ -14,7 +16,7 @@ class JamSessionConnection(tornadio.SocketConnection):
   connections = set() # item: JamSessionConnection
 
   def on_open(self, *args, **kwargs):
-    connections.add(self)
+    self.connections.add(self)
     self.send('Welcome!')
 
   def _init(userId):
@@ -66,11 +68,8 @@ ChatRouter = tornadio.get_router(ChatConnection)
 application = tornado.web.Application(
   [(r"/", IndexHandler), ChatRouter.route()],
   enabled_protocols = ['websocket',
-                       'flashsocket',
                        'xhr-multipart',
                        'xhr-polling'],
-  flash_policy_port = 843,
-  flash_policy_file = op.join(config.ROOT, 'flashpolicy.xml'),
   socket_io_port = 8001
 )
 
