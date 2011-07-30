@@ -1,0 +1,63 @@
+#piano-roll
+{
+	border-spacing: 0px;
+	border-collapse: collapse;
+}
+
+#piano-roll-container
+{
+	position: relative;
+}
+
+.piano-roll-play-cursor
+{
+	position: absolute;
+	height: 100%;
+	width: 2px;
+	background-color: red;
+	top: 4px;
+	left: 90px;
+}
+
+#piano-roll tbody
+{
+	height: 500px;
+	width: 1000px;
+	overflow-y: auto;
+	overflow-x: scroll;
+	display: block;
+	position: relative;
+}
+
+.piano-roll-row
+{
+	width: 100%;
+	height: 12px;
+	display: block;
+}
+
+.piano-roll-row td
+{
+	height: 12px;
+	display: inline-block;
+}
+
+.piano-roll-row-key
+{
+	width: 90px;
+}
+
+.piano-roll-row-roll
+{
+	width: 890px;
+	margin-left: -2px;
+	border: 1px solid black;
+}
+
+.piano-note
+{
+	height: 12px;
+	position: absolute;
+	left: 86px;
+	top: 6px;
+}
