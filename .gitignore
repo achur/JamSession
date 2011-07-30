@@ -1,5 +1,5 @@
 *.swp
 *.pyc
 *~
-server/config.py
+config.py
 *#
