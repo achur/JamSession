@@ -2,10 +2,11 @@ import os.path
 from collections import defaultdict
 
 import tornado.web
-from tornado.options import define, options
+from tornado.options import options
 import tornadio
 import tornadio.router
 import tornadio.server
+from tornado.escape import json_encode, json_decode
 
 import config
 options.port = getattr(config, 'port', 8888)
@@ -15,7 +16,7 @@ ROOT_DIR = os.path.dirname(__file__)
 
 class JamSessionConnection(tornadio.SocketConnection):
   """Base JamSession connection object"""
-  scores = defaultdict(set) # key: scoreId, val: {JamSessionConnection}
+  scores = defaultdict(set) # key: score string, val: {JamSessionConnection}
 
   def on_open(self, *args, **kwargs):
     self.score, self.user_name = kwargs['extra'].split('-')
@@ -47,15 +48,15 @@ class JamSessionConnection(tornadio.SocketConnection):
     pass
 
   def on_message(self, m):
-    elif m.method == 'addNote':
+    if m['method'] == 'addNote':
       self._addNote(m,m.note)
-    elif m.method == 'removeNote':
+    elif m['method'] == 'removeNote':
       self._removeNote(m,m.note)
-    elif m.method == 'addMeasureBlock':
+    elif m['method'] == 'addMeasureBlock':
       self._addMeasureBlock(m,m.measureBlock)
-    elif m.method == 'removeMeasureBlock':
+    elif m['method'] == 'removeMeasureBlock':
       self._removeMeasureBlock(m,m.measureBlock)
-    elif m.method == 'getScore':
+    elif m['method'] == 'getScore':
       self._getScore()
       
   def on_close(self):
