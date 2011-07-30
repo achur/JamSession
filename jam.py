@@ -20,6 +20,26 @@ options.debug = getattr(config, 'debug', True)
 ROOT_DIR = os.path.dirname(__file__)
 R = redis.Redis('youstache.com', port=6379, db=0)
 
+def redisGetMeasureBlocks(score):
+  key = '.'.join([score, 'measureBlocks'])
+  value = R.get(key)
+  if value: return loads(value)
+  else: return []
+
+def redisGetNotes(score):
+  key = '.'.join([score, 'notes'])
+  value = R.get(key)
+  if value: return loads(value)
+  else: return []
+
+def redisSetMeasureBlocks(score, measureBlocks):
+  key = '.'.join([score, 'measureBlocks'])
+  R.set(key, dumps(measureBlocks))
+
+def redisSetNotes(score, notes):
+  key = '.'.join([score, 'note'])
+  R.set(key, dumps(notes))
+
 class JamSessionConnection(tornadio.SocketConnection):
   """Base JamSession connection object"""
   scores = defaultdict(set) # key: score string, val: {JamSessionConnection}
@@ -60,21 +80,30 @@ class JamSessionConnection(tornadio.SocketConnection):
 
   def _getScore(self):
     # TODO: send score to user
-    pass
+    measureBlocks = redisGetMeasureBlocks(self.score)
+    notes = redisGetNotes(self.score)
+    package = {'name' : self.score,
+               'measureBlocks' : measureBlocks,
+               'notes' : notes}
+    return package
 
   def on_message(self, m):
-    if m['method'] == 'addNote':
-      package = self._addNote(m, m['note'])
-    elif m['method'] == 'removeNote':
-      package = self._removeNote(m, m['note'])
-    elif m['method'] == 'addMeasureBlock':
-      package = self._addMeasureBlock(m, m['measureBlock'])
-    elif m['method'] == 'removeMeasureBlock':
-      package = self._removeMeasureBlock(m, m['measureBlock'])
-    elif m['method'] == 'getScore':
+    if m['method'] == 'getScore':
       package = self._getScore()
-    else: return
-    if package: self._broadcast(package)
+      if package: self.send(package)
+    else:
+      if m['method'] == 'addNote':
+        package = self._addNote(m, m['note'])
+      elif m['method'] == 'removeNote':
+        package = self._removeNote(m, m['note'])
+      elif m['method'] == 'addMeasureBlock':
+        package = self._addMeasureBlock(m, m['measureBlock'])
+      elif m['method'] == 'removeMeasureBlock':
+        package = self._removeMeasureBlock(m, m['measureBlock'])
+      elif m['method'] == 'getScore':
+        package = self._getScore()
+      else: return
+      if package: self._broadcast(package)
       
   def on_close(self):
     self.scores[self.score].remove(self)
