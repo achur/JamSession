@@ -137,7 +137,7 @@ class JamSessionConnection(tornadio.SocketConnection):
         package = self._clearScore()
       else:
         raise ValueError("Didn't specify valid method")
-      if package: self._broadcast(json_encode(package))
+      self._broadcast(json_encode(m))
     except Exception, e:
       logging.error(traceback.print_exc())
       self.send(json_encode("Python exception: %s" % str(e)))
@@ -152,8 +152,10 @@ class UnittestHandler(tornado.web.RequestHandler):
       self.render('unittest.html')
 
 class ScoreHandler(tornado.web.RequestHandler):
-  def get(self):
-      
+  def get(self, score):
+    v = {'score': score, 'user_name': ''}
+    self.render('index.html', **v)
+
 class Application(tornado.web.Application):
   def __init__(self):
     Router = tornadio.get_router(JamSessionConnection, resource='JamSessionSocket', extra_re=r'\S+', extra_sep='/')

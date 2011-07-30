@@ -1,10 +1,22 @@
 var id = 1;
 var user_name = "crazy_dan";
 var score = "crazy";
+var piano_roll_template = '{{#keys}}\
+				<tr class="piano-roll-row">\
+					<td class="piano-roll-row-key">\
+						<img src="/static/img/key{{.}}.png">\
+					</td>\
+					<td class="piano-roll-row-roll">\
+					</td>\
+				</tr>\
+			{{/keys}}\
+<div class="piano-roll-play-cursor"></div>';
+
+var piano_note_template = '<div class = "piano-note {{id}}" style = "width: {{width}}px; background-color: {{color}}"></div>'
+
 
 $(function() {
 	setupPianoRoll();
-	setupJamSession();
 	addNote({width: 50, color: "red", id: id});
 	addNote({width: 90, color: "blue", id: id});
 	addNote({width: 90, color: "green", id: id});
@@ -17,7 +29,9 @@ $(function() {
 function setupPianoRoll()
 {
 	var keys = [1,1,3,2,3,2,3,2,1,3,2,3,2,1,3,2,3,2,3,2,1,3,2,3,2,1,3,2,3,2,3,2,1,3,2,3,2,1,3,2,3,2,3,2,1,3,2,3,2,1,3,2,3,2,3,2,1,3,2,3,2,1,3,2,3,2,3,2,1,3,2,3,4];
-	$("#piano-roll").jqotepre('#piano-roll-template', {numKeys: 88, keys: keys, fake: "3"});
+
+  var html = Mustache.to_html(piano_roll_template, {numKeys: 88, keys: keys, fake: "3"});
+	$("#piano-roll").append(html);
 	animateCursor();
 }
 
@@ -49,7 +63,8 @@ function addNote(config)
 		resize: updateNotePosition
 	}	
 	console.log(draggableOptions);
-	$("#piano-roll tbody").jqotepre('#piano-note-template', {id: config.id, width: config.width, color: config.color})
+  var html = Mustache.to_html(piano_note_template, {id: config.id, width: config.width, color: config.color});
+  $("#piano-roll tbody").append(html);
 	$(".piano-note." + config.id).draggable(draggableOptions);
 	$(".piano-note." + config.id).resizable(resizableOptions);
 	id++;
@@ -69,22 +84,5 @@ function resizePianoRoll(event)
 	}
 }
 
-function setupJamSession()
-{
-	/*var s = new io.Socket(window.location.hostname,
-                      {port : 8888, 
-                       rememberTransport : false,
-                       resource: 'JamSessionSocket/' + score + '-' + user_name});
-    s.connect();
-    
-    s.addEvent('connect', function(data) {
-        // console.log(data)
-    });
-    
-    s.addEvent('message', function(data) {
-        console.log("Received Socket Data: " + data);
-        var data = JSON.parse(data);
-		console.log(data);
-    });*/
-}
+
 
