@@ -16,10 +16,7 @@ from tornado.escape import json_encode, json_decode
 
 import redis
 
-try:
-  import config
-except ImportError:
-  config = {}
+import config
 logging.getLogger().setLevel(logging.DEBUG)
 options.port = getattr(config, 'port', 8888)
 options.debug = getattr(config, 'debug', True)
