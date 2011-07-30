@@ -86,7 +86,17 @@ class JamSessionConnection(tornadio.SocketConnection):
       return note
     except ValueError:
       pass # Cannot Find Note  
-  
+
+  def _updateNote(self, note1, note2):
+    notes = self.notes
+    try:
+      notes.remove(note1)
+      notes.append(note2)
+      self.notes = notes
+      return note2
+    except ValueError:
+      pass # Cannot Find Note
+    
   def _addMeasureBlock(self, measureBlock):
     measures = self.measures
     measures.append(measureBlock)
@@ -119,6 +129,7 @@ class JamSessionConnection(tornadio.SocketConnection):
   
   def on_message(self, m):
     try:
+      self._broadcast(m)
       m = json_decode(m)
       logging.info(m)
       if m['method'] == 'getScore':
@@ -129,6 +140,8 @@ class JamSessionConnection(tornadio.SocketConnection):
         package = self._addNote(m['note'])
       elif m['method'] == 'removeNote':
         package = self._removeNote(m['note'])
+      elif m['method'] == 'updateNote':
+        package = self._updateNote(m['old_note'], m['new_note'])
       elif m['method'] == 'addMeasureBlock':
         package = self._addMeasureBlock(m['measureBlock'])
       elif m['method'] == 'removeMeasureBlock':
@@ -137,7 +150,6 @@ class JamSessionConnection(tornadio.SocketConnection):
         package = self._clearScore()
       else:
         raise ValueError("Didn't specify valid method")
-      self._broadcast(json_encode(m))
     except Exception, e:
       logging.error(traceback.print_exc())
       self.send(json_encode("Python exception: %s" % str(e)))

@@ -42,6 +42,11 @@ function jss_removeNote(note) {
                      'note': {note}});
 }
 
+function jss_updateNote(note, new_note) {
+    jss_sendPackage({'method': 'updateNote',
+                     'old_note': note, 'new_note': new_note});
+}
+
 function jss_addMeasure(measure) {
     jss_sendPackage({'method': 'addMeasureBlock', 
                      'measure': {measure}});
