@@ -51,13 +51,23 @@ var JamScorePlayer;
 		playHertz: function(hertz, numSecs, gain, convolutions)
 		{
 			numSecs || (numSecs = 1);
-			gain || (gain = 1);
-			
+      gain || (gain = 1);
+			(g = ((hertz < 200) ? 3 :
+            (hertz < 600) ? 1.5 : 
+            (hertz < 800) ? 1 : 0.7));
+      gain = g * gain;
+      console.log(gain);
+
 			var source = this._context.createBufferSource();
-			framelen = numSecs > 0 ? numSecs: 1;
-			source.buffer = this._context.createBuffer(this.num_channels(), framelen * this.sample_rate(), this.sample_rate());
-			var osc = new this._dsp.Oscillator(this._dsp.SINE, hertz, gain, framelen * this.sample_rate(), this.sample_rate());
+      multiple = 0;
+      while(multiple < 42000) multiple += hertz;
+      framelen = numSecs > 0 ? numSecs * multiple: multiple;
+			sample = multiple;
+
+      source.buffer = this._context.createBuffer(this.num_channels(), framelen, sample );
+			var osc = new this._dsp.Oscillator(this._dsp.SINE, hertz, gain, framelen, sample );
 			osc.generate();
+
 			for(var i = 0; i < this.num_channels(); ++i)
 			{
 				source.buffer.getChannelData(i).set(osc.signal);
@@ -107,7 +117,7 @@ var JamScorePlayer;
 			"F0": 0x11, "E0": 0x10, "Eb0": 0x0F, "D0": 0x0E, "Db0": 0x0D, "C0": 0x0C };
 			var a4 = noteTable["A4"];
 			var note = noteTable[noteName];
-			if(!note) throw new Error("You entered a note that does not exist!  " + noteName);
+			if(!note) throw new Error("You entered a note that does not exist! " + noteName);
 			return 440 * Math.pow(2, (note - a4)/12);
 		},
 		
