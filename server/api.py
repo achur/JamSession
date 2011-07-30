@@ -47,6 +47,14 @@ class JamSessionConnection(tornadio.SocketConnection):
       self.scores[scoreId].remove(userId)
       self._broadcastScore(self,m,scoreId)
   
+  def _createScore(self,m,userId,scoreName):
+    if userId in self.users:
+      # TODO: create score
+      self.scores[scoreId] = set()
+      
+      m.scoreId = scoreId
+      self._broadcastAll(self,m)
+  
   def _addNote(self,m,userId,scoreId,note):
     if userId in self.users and scoreId in self.scores \
        and userId in self.scores[scoreId]:
@@ -56,19 +64,19 @@ class JamSessionConnection(tornadio.SocketConnection):
   def _addMeasureBlock(self,m,userId,scoreId,measureBlock):
     if userId in self.users and scoreId in self.scores \
        and userId in self.scores[scoreId]:
-      # TODO: Add note to score
+      # TODO: Add measureBlock to score
       self._broadcastScore(self,m,scoreId)
 
   def _removeNote(self,m,userId,scoreId,note):
     if userId in self.users and scoreId in self.scores \
        and userId in self.scores[scoreId]:
-      # TODO: Add note to score
+      # TODO: Remove note to score
       self._broadcastScore(self,m,scoreId)
 
   def _removeMeasureBlock(self,m,userId,scoreId):
     if userId in self.users and scoreId in self.scores \
        and userId in self.scores[scoreId]:
-      # TODO: Add note to score
+      # TODO: Remove measureBlock to score
       self._broadcastScore(self,m,scoreId)
 
   def _getScore(self,m,userId,scoreId):
@@ -83,6 +91,8 @@ class JamSessionConnection(tornadio.SocketConnection):
       self._editScore(m,m.userId,m.scoreId)
     elif m.method == 'closeScore':
       self._closeScore(m,m.userId,m.scoreId)
+    elif m.method == 'createScore':
+      self._createScore(m,m.userId,m.scoreName)
     elif m.method == 'addNote':
       self._addNote(m,m.userId,m.scoreId,m.note)
     elif m.method == 'removeNote':
