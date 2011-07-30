@@ -6,6 +6,8 @@ import tornadio
 import tornadio.router
 import tornadio.server
 
+from tornado.escape import json_encode
+
 import config
 options.port = getattr(config, 'port', 8888)
 options.debug = getattr(config, 'debug', True)
@@ -14,50 +16,83 @@ ROOT_DIR = os.path.dirname(__file__)
 
 class JamSessionConnection(tornadio.SocketConnection):
   """Base JamSession connection object"""
-  scores =        { } # key: scoreId, val: [userId]
+  scores =        { } # key: scoreId, val: set<userId>
   users =         { } # key: userId,  val: JamSessionConnection
   connections = set() # item: JamSessionConnection
+
+  def _broadcastAll(self,m):
+    for p in self.users.iterkeys():
+      p.send(json_encode(m))
+
+  def _broadcastScore(self,m,scoreId):
+    for u in self.scores[scoreId]:
+      self.users[u].send(json_encode(m))
 
   def on_open(self, *args, **kwargs):
     self.connections.add(self)
     self.send('Welcome!')
 
-  def _init(userId):
-    pass
-
-  def _editScore(userId,scoreId):
-    pass
+  def _init(self,m,userId):
+    if userId not in self.users:
+      self.users[userId] = self
+      self._broadcastAll(m)
   
-  def _addNote(userId,scoreId,note):
-    pass
+  def _editScore(self,m,userId,scoreId):
+    if userId in self.users and scoreId in self.scores:
+      self.scores.add(userId)
+      self._broadcastScore(self,m,scoreId)
 
-  def _addMeasureBlock(userId,scoreId,measureBlock):
-    pass
+  def _closeScore(self,m,userId,scoreId):
+    if userId in self.users and scoreId in self.scores:
+      self.scores[scoreId].remove(userId)
+      self._broadcastScore(self,m,scoreId)
+  
+  def _addNote(self,m,userId,scoreId,note):
+    if userId in self.users and scoreId in self.scores \
+       and userId in self.scores[scoreId]:
+      # TODO: Add note to score
+      self._broadcastScore(self,m,scoreId)
 
-  def _removeNote(userId,scoreId,note):
-    pass
+  def _addMeasureBlock(self,m,userId,scoreId,measureBlock):
+    if userId in self.users and scoreId in self.scores \
+       and userId in self.scores[scoreId]:
+      # TODO: Add note to score
+      self._broadcastScore(self,m,scoreId)
 
-  def _removeMeasureBlock(userId,scoreId):
-    pass
+  def _removeNote(self,m,userId,scoreId,note):
+    if userId in self.users and scoreId in self.scores \
+       and userId in self.scores[scoreId]:
+      # TODO: Add note to score
+      self._broadcastScore(self,m,scoreId)
 
-  def _getScore(userId,scoreId):
-    pass
+  def _removeMeasureBlock(self,m,userId,scoreId):
+    if userId in self.users and scoreId in self.scores \
+       and userId in self.scores[scoreId]:
+      # TODO: Add note to score
+      self._broadcastScore(self,m,scoreId)
+
+  def _getScore(self,m,userId,scoreId):
+    if userId in self.users and scoreId in self.scores \
+       and userId in self.scores[scoreId]:
+      # TODO: send score to user
 
   def on_message(self, m):
     if m.method == 'init':
-      self._init(m.userId)
+      self._init(m,m.userId)
     elif m.method == 'editScore':
-      self._editScore(m.userId,m.scoreId)
+      self._editScore(m,m.userId,m.scoreId)
+    elif m.method == 'closeScore':
+      self._closeScore(m,m.userId,m.scoreId)
     elif m.method == 'addNote':
-      self._addNote(m.userId,m.scoreId,m.note)
+      self._addNote(m,m.userId,m.scoreId,m.note)
     elif m.method == 'removeNote':
-      self._removeNote(m.userId,m.scoreId,m.note)
+      self._removeNote(m,m.userId,m.scoreId,m.note)
     elif m.method == 'addMeasureBlock':
-      self._addMeasureBlock(m.userId,m.scoreId,m.measureBlock)
+      self._addMeasureBlock(m,m.userId,m.scoreId,m.measureBlock)
     elif m.method == 'removeMeasureBlock':
-      self._removeMeasureBlock(m.userId,m.scoreId,m.measureBlock)
+      self._removeMeasureBlock(m,m.userId,m.scoreId,m.measureBlock)
     elif m.method == 'getScore':
-      self._getScore(m.userId,m.scoreId)
+      self._getScore(m,m.userId,m.scoreId)
 
   def on_close(self):
     self.participants.remove(self)
