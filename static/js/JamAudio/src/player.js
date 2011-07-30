@@ -1,8 +1,28 @@
 var JamSynth;
 var JamKit;
+var JamKitBox;
 
 (function()
-{	
+{
+	function constructStandardKitList(folder)
+	{
+		var toReturn = [];
+		toReturn.push("samples/" + folder + "/hihat.wav");
+		toReturn.push("samples/" + folder + "/kick.wav");
+		toReturn.push("samples/" + folder + "/snare.wav");
+		toReturn.push("samples/" + folder + "/tom1.wav");
+		toReturn.push("samples/" + folder + "/tom2.wav");
+		toReturn.push("samples/" + folder + "/tom3.wav");
+		return toReturn;
+	}
+	
+	var kitLoops = 	{
+		"acoustic": constructStandardKitList("acoustic"),
+		"techno": constructStandardKitList("Techno"),
+		"R8": constructStandardKitList("R8"),
+		"bongos": constructStandardKitList("Bongos")
+	};
+	
 	var Synth = Class.$extend(
 	{
 		__init__: function(context, sampleRate, numChannels)
@@ -172,7 +192,9 @@ var JamKit;
 		
 		playNote: function(noteName, sendGain, mainGain, cutoff, resonance)
 		{
-			this.playIndex(this._getNoteIndex(noteName), sendGain, mainGain, cutoff, resonance);
+			var index = this._getNoteIndex(noteName);
+			console.log(index);
+			this.playIndex(index, sendGain, mainGain, cutoff, resonance);
 		},
 		
 		_getNoteIndex: function(noteName)
@@ -194,16 +216,64 @@ var JamKit;
 			"G1": 0x1F, "Gb1": 0x1E, "F1": 0x1D, "E1": 0x1C, "Eb1": 0x1B, "D1": 0x1A, "Db1": 0x19,
 			"C1": 0x18, "B0": 0x17, "Bb0": 0x16, "A0": 0x15, "Ab0": 0x14, "G0": 0x13, "Gb0": 0x12,
 			"F0": 0x11, "E0": 0x10, "Eb0": 0x0F, "D0": 0x0E, "Db0": 0x0D, "C0": 0x0C };
-			var a4 = noteTable["A4"];
+			var c0 = noteTable["C0"];
 			var note = noteTable[noteName];
-			return (a4 - note) / this.kit_paths().length;
+			console.log(c0);
+			console.log(note);
+			return (note - c0) % this.kit_paths().length;
 		},
 		
 		__instancevars__: ["sample_rate", "num_channels", "kit_paths", "buffers"]
 	});
 	
+	/*
+	 *  Library for a bunch of kits to share an audiocontext.
+	 *  Also convenient for playing notes.
+	 */
+	var KitBox = Class.$extend(
+	{
+		__init__: function()
+		{
+			this._kits = {};
+			this._context = new webkitAudioContext();
+		},
+		
+		loadKit: function(kitName, kitList, callbackFn)
+		{
+			console.log(kitList);
+			this._kits[kitName] = new Kit(kitList, callbackFn, this._context);
+		},
+		
+		loadKitByName: function(kitName, callbackFn)
+		{
+			console.log(kitLoops);
+			this.loadKit(kitName, kitLoops[kitName], callbackFn);
+		},
+		
+		loadKitsByNames: function(kitNames, callbackFn)
+		{
+			var curCount = 0;
+			var total = kitNames.length;
+			var fn = function()
+			{
+				curCount++;
+				if(curCount === total) callbackFn();
+			};
+			for(var i = 0; i < kitNames.length; ++i)
+			{
+				this.loadKitByName(kitNames[i], fn);
+			}
+		},
+		
+		playNote: function(kitName, noteName)
+		{
+			this._kits[kitName].playNote(noteName);
+		}
+	});
+	
 	JamSynth = Synth;
 	JamKit = Kit;
+	JamKitBox = KitBox;
 	
 })();
 
