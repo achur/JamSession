@@ -30,10 +30,35 @@ var JamScore;
 		{
 			if(json) this.fromJSON(json);
 			if(!this.notes()) this.notes([]);
-			if(!this.blocks()) this.blocks([]);
+			if(!this.blocks()) this.blocks([
+				new Block( {keysig : "4", onsetTime : "0", tempo: 120} );
+			]);
 		},
 		
 		__instancevars__: ["notes", "blocks"],
+		
+		getNoteForTime(val, secsStartTime, secsLength, inst)
+		{
+			var totalTime = 0;
+			var totalBeats = 0;
+			var blk;
+			for(blk = 1; blk < this.blocks().length; ++blk)
+			{
+				var numBeats = this.blocks()[blk].onsetTime - this.blocks()[blk - 1].onsetTime;
+				totalBeats += numBeats;
+				var numSecs = (60/this.blocks()[blk-1].tempo) * numBeats;
+				totalTime += numSecs;
+				if(totalTime > secsStartTime) {
+					break;
+					totalTime -= numSecs;
+					totalBeats -= numBeats;
+				}
+			}
+			var block = this.blocks()[blk - 1];
+			var st = (secsStartTime - totalTime) * (block.tempo/60) + totalBeats;
+			var len = secsLength * (block.tempo/60);
+			return new Note( { value: val, start: st, length: len, instrument: inst } );
+		},
 		
 		appendNote: function(note)
 		{
