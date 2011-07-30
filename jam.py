@@ -8,11 +8,16 @@ import tornadio.router
 import tornadio.server
 from tornado.escape import json_encode, json_decode
 
+import redis
+import logging
+
 import config
+logging.getLogger().setLevel(logging.DEBUG)
 options.port = getattr(config, 'port', 8888)
 options.debug = getattr(config, 'debug', True)
 
 ROOT_DIR = os.path.dirname(__file__)
+R = redis.Redis('youstache.com', port=6379, db=0)
 
 class JamSessionConnection(tornadio.SocketConnection):
   """Base JamSession connection object"""
@@ -23,25 +28,28 @@ class JamSessionConnection(tornadio.SocketConnection):
     self.scores[self.score].add(self)
     self.send('Welcome!')
     
-  def _broadcast(self,m):
-    for p in self.scores[self.score]:
-      p.send(json_encode(m))
-
+  def _broadcast(self, package):
+    for conn in self.scores[self.score]:
+      try:
+        conn.send(package)
+      except:
+        logging.error("Error sending message", exc_info=True)
+        
   def _addNote(self,m,note):
     # TODO: add note to score
-    self._broadcast(self,m)
+    pass
 
   def _addMeasureBlock(self,m,measureBlock):
     # TODO: add measureBlock to score
-    self._broadcast(self,m)
-
+    pass
+  
   def _removeNote(self,m,note):
     # TODO: remove note from score
-    self._broadcast(self,m)
-
+    pass
+  
   def _removeMeasureBlock(self,m,measureBlock):
     # TODO: remove measureBlock from score
-    self._broadcast(self,m)
+    pass
 
   def _getScore(self):
     # TODO: send score to user
@@ -49,15 +57,17 @@ class JamSessionConnection(tornadio.SocketConnection):
 
   def on_message(self, m):
     if m['method'] == 'addNote':
-      self._addNote(m,m.note)
+      package = self._addNote(m, m['note'])
     elif m['method'] == 'removeNote':
-      self._removeNote(m,m.note)
+      package = self._removeNote(m, m['note'])
     elif m['method'] == 'addMeasureBlock':
-      self._addMeasureBlock(m,m.measureBlock)
+      package = self._addMeasureBlock(m, m['measureBlock'])
     elif m['method'] == 'removeMeasureBlock':
-      self._removeMeasureBlock(m,m.measureBlock)
+      package = self._removeMeasureBlock(m, m['measureBlock'])
     elif m['method'] == 'getScore':
-      self._getScore()
+      package = self._getScore()
+    else: return
+    if package: self._broadcast(package)
       
   def on_close(self):
     self.scores[self.score].remove(self)
@@ -83,8 +93,6 @@ class Application(tornado.web.Application):
     tornado.web.Application.__init__(self, handlers, **settings)
 
 def main():
-  import logging
-  logging.getLogger().setLevel(logging.DEBUG)
   tornado.options.parse_command_line()
   http_server = tornado.httpserver.HTTPServer(Application())
   http_server.listen(options.port)
