@@ -15,53 +15,52 @@ ROOT_DIR = os.path.dirname(__file__)
 
 class JamSessionConnection(tornadio.SocketConnection):
   """Base JamSession connection object"""
-  scores = defaultdict(set) # key: scoreId, val: [userId]
+  scores = defaultdict(set) # key: scoreId, val: {JamSessionConnection}
 
   def on_open(self, *args, **kwargs):
     self.score, self.user_name = kwargs['extra'].split('-')
     self.scores[self.score].add(self)
     self.send('Welcome!')
     
-  def _init(userId):
-    pass
+  def _broadcast(self,m):
+    for p in self.scores[self.score]:
+      p.send(json_encode(m))
 
-  def _editScore(userId,scoreId):
-    pass
-  
-  def _addNote(userId,scoreId,note):
-    pass
+  def _addNote(self,m,note):
+    # TODO: add note to score
+    self._broadcast(self,m)
 
-  def _addMeasureBlock(userId,scoreId,measureBlock):
-    pass
+  def _addMeasureBlock(self,m,measureBlock):
+    # TODO: add measureBlock to score
+    self._broadcast(self,m)
 
-  def _removeNote(userId,scoreId,note):
-    pass
+  def _removeNote(self,m,note):
+    # TODO: remove note from score
+    self._broadcast(self,m)
 
-  def _removeMeasureBlock(userId,scoreId):
-    pass
+  def _removeMeasureBlock(self,m,measureBlock):
+    # TODO: remove measureBlock from score
+    self._broadcast(self,m)
 
-  def _getScore(userId,scoreId):
+  def _getScore(self):
+    # TODO: send score to user
     pass
 
   def on_message(self, m):
-    if m.method == 'init':
-      self._init(m.userId)
-    elif m.method == 'editScore':
-      self._editScore(m.userId,m.scoreId)
     elif m.method == 'addNote':
-      self._addNote(m.userId,m.scoreId,m.note)
+      self._addNote(m,m.note)
     elif m.method == 'removeNote':
-      self._removeNote(m.userId,m.scoreId,m.note)
+      self._removeNote(m,m.note)
     elif m.method == 'addMeasureBlock':
-      self._addMeasureBlock(m.userId,m.scoreId,m.measureBlock)
+      self._addMeasureBlock(m,m.measureBlock)
     elif m.method == 'removeMeasureBlock':
-      self._removeMeasureBlock(m.userId,m.scoreId,m.measureBlock)
+      self._removeMeasureBlock(m,m.measureBlock)
     elif m.method == 'getScore':
-      self._getScore(m.userId,m.scoreId)
+      self._getScore()
       
   def on_close(self):
-    self.participants.remove(self)
-    for p in self.participants:
+    self.scores[self.score].remove(self)
+    for p in self.scores[self.score]:
       p.send("A user has left.")
 
 
