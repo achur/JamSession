@@ -1,6 +1,7 @@
 var JamSynth;
 var JamKit;
 var JamKitBox;
+var JamScorePlayer;
 
 (function()
 {
@@ -106,7 +107,7 @@ var JamKitBox;
 			"F0": 0x11, "E0": 0x10, "Eb0": 0x0F, "D0": 0x0E, "Db0": 0x0D, "C0": 0x0C };
 			var a4 = noteTable["A4"];
 			var note = noteTable[noteName];
-			if(!note) throw new Error("You entered a note that does not exist!");
+			if(!note) throw new Error("You entered a note that does not exist!  " + noteName);
 			return 440 * Math.pow(2, (note - a4)/12);
 		},
 		
@@ -236,6 +237,7 @@ var JamKitBox;
 		{
 			this._kits = {};
 			this._context = new webkitAudioContext();
+			this._kits["synth"] = new Synth(this._context);
 		},
 		
 		loadKit: function(kitName, kitList, callbackFn)
@@ -265,15 +267,80 @@ var JamKitBox;
 			}
 		},
 		
-		playNote: function(kitName, noteName)
+		playNote: function(kitName, noteName, numSecs)
 		{
+			if(numSecs && (this._kits[kitName] instanceof Synth)) this._kits[kitName].playNote(noteName, numSecs);
 			this._kits[kitName].playNote(noteName);
 		}
+	});
+	
+	/*
+	 *  Library to play a score
+	 */
+	var ScorePlayer = Class.$extend(
+	{
+		__init__: function(score, callbackFn)
+		{
+			this.score(score);
+			this.kitBox(new KitBox());
+			var self = this;
+			this.kitBox().loadKitsByNames(["acoustic", "techno", "R8", "bongos"], function() { self._ready = true; callbackFn() });
+			this._ready = false;
+			this._playing = false;
+		},
+		
+		startPlaying: function(startPosition)
+		{
+			if(!this._ready) return;
+			var startIndex;
+			for(var i = 0; i < this.score().notes().length; ++i)
+			{
+				console.log(this.score().notes()[i].start());
+				if(startPosition <= this.score().notes()[i].start()) {
+					startIndex = i;
+					break;
+				}
+			}
+			if(startPosition >= this.score().notes().length) return;
+			this._playing = true;
+			var startTime = this.score().getTimeForBeat(startPosition);
+			var firstNoteTime = this.score().getTimeForBeat(this.score().notes()[startIndex].start());
+			var self = this;
+			setTimeout( function() { self.asyncPlay(startIndex, self); }, 1000 * (firstNoteTime - startTime) );
+		},
+		
+		asyncPlay: function(index, self)
+		{
+			if(!self._playing) return;
+			if(index >= self.score().notes().length) {
+				self._playing = false;
+				return;
+			}
+			
+			var note = self.score().notes()[index];
+			self.kitBox().playNote(note.instrument(), note.value(), self.score().getLengthForNote(note.start(), note.length()));
+			
+			if(index + 1 >= self.score().notes().length) {
+				self._playing = false;
+				return;
+			}
+			var curNoteTime = this.score().getTimeForBeat(self.score().notes()[index].start());
+			var nextNoteTime = this.score().getTimeForBeat(self.score().notes()[index + 1].start());
+			setTimeout( function() { self.asyncPlay(index + 1, self); }, 1000 * (nextNoteTime - curNoteTime) );
+		},
+		
+		stopPlaying: function()
+		{
+			this._playing = false;
+		},
+		
+		__instancevars__: ["score", "kitBox"]
 	});
 	
 	JamSynth = Synth;
 	JamKit = Kit;
 	JamKitBox = KitBox;
+	JamScorePlayer = ScorePlayer;
 	
 })();
 
