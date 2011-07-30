@@ -12,6 +12,10 @@
 	<script src="/static/js/jamsocket.js"></script>
 	<link rel="stylesheet" href="/css/stylesheet.css">
 	<link rel="stylesheet" href="/css/jquery.ui.resizable.css">
+  <script type="text/javascript">
+    score = {{ score }};
+    user_name = {% if user_name %}{{ user_name }}{% end %};
+  </script>
 </head>
 <body>
 	<div id="piano-roll-container">
