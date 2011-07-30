@@ -6,6 +6,7 @@ $(function(){
     jss.connect();
     
     jss.addEvent('connect', function(data) {
+        return;
         // console.log(data)
     });
     
@@ -27,34 +28,28 @@ function jss_recievePackage(package) {
 
 function jss_sendPackage(package) {
     var package = JSON.stringify(package);
-    // console.log("Sending Socket Request: " + package);
+    console.log("Sending Socket Request: " + package);
     s.send(package);
 }
 
-function jss_addNote(value, start, length, instrument) {
-    // value (str), start (float), length (float), instrument (str)
+function jss_addNote(note) {
     jss_sendPackage({'method': 'addNote', 
-                     'note': {'value': value, 'start': start, 
-                              'length': length, 'instrument': instrument}});
+                     'note': {note}});
 }
 
-function jss_removeNote(value, start, length, instrument) {
-    // value (str), start (float), length (float), instrument (str)
+function jss_removeNote(note) {
     jss_sendPackage({'method': 'removeNote', 
-                     'note': {'value': value, 'start': start, 
-                              'length': length, 'instrument': instrument}});
+                     'note': {note}});
 }
 
-function jss_addMeasure(keysig, onsetTime, tempo) {
-    // keysig (str), onsetTime (float), tempo (int)
+function jss_addMeasure(measure) {
     jss_sendPackage({'method': 'addMeasureBlock', 
-                     'measure': {'keysig': keysig, 'onsetTime': onsetTime, 'tempo': tempo}});
+                     'measure': {measure}});
 }
 
-function jss_removeMeasure(keysig, onsetTime, tempo) {
-    // keysig (str), onsetTime (float), tempo (int)
+function jss_removeMeasure(measure) {
     jss_sendPackage({'method': 'removeMeasureBlock', 
-                     'measure': {'keysig': keysig, 'onsetTime': onsetTime, 'tempo': tempo}});
+                     'measure': {measure}});
 }
 
 function jss_getScore() {
@@ -64,26 +59,4 @@ function jss_getScore() {
 function jss_clearScore() {
     jss_sendPackage({'method': 'clearScore'});
 }
-	
-	<!-- <script type="text/x-jqote-template" id="piano-roll-template"> -->
-	<!--     <![CDATA[ -->
-	<!--     	<% for (key in this.keys) {%> -->
-	<!-- 			<tr class="piano-roll-row"> -->
-	<!-- 				<td class="piano-roll-row-key"> -->
-	<!-- 					<img src = '<%= "img/key" + this.keys[key] + ".png" %>'> -->
-	<!-- 				</td> -->
-	<!-- 				<td class="piano-roll-row-roll"> -->
-	<!-- 				</td> -->
-	<!-- 			</tr> -->
-	<!-- 		<% } %> -->
-	<!-- 		<div class="piano-roll-play-cursor"></div> -->
-	<!--     ]]> -->
-	<!-- </script> -->
-	
-	
-	<!-- <script type="text/x-jqote-template" id="piano-note-template"> -->
-	<!--     <![CDATA[ -->
-	<!--     	<div class = "piano-note <%= this.id %>" style = '<%= "width: " + this.width + "px; background-color: " + this.color %>'></div> -->
-	<!--     ]]> 
-	<!-- </script> -->
-  
+

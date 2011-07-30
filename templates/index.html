@@ -10,14 +10,14 @@
 	<script src="/static/js/jquery/jquery.ui.resizable.js"></script>	
 	<script src="/static/js/index.js"></script>
   <script src="/static/js/mustache.js"></script>
-	<script src="/static/js/jamsocket.js"></script>
+	<!-- <script src="/static/js/jamsocket.js"></script> -->
 	<link rel="stylesheet" href="/static/css/stylesheet.css">
 	<link rel="stylesheet" href="/static/css/jquery.ui.resizable.css">
   <script type="text/javascript">
     $(function(){
     score = "{{ score }}";
     user_name = "{% if user_name %}{{ user_name }}{% end %}";
-});
+    });
   </script>
 </head>
 <body>
@@ -26,9 +26,5 @@
 		<table id="piano-roll" border="0" cellpadding="0" cellspacing="0">
 		</table>
 	</div>
-
-  
-
-  
 </body>
 </html>
