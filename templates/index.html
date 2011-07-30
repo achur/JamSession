@@ -13,8 +13,15 @@
 	<link rel="stylesheet" href="/css/stylesheet.css">
 	<link rel="stylesheet" href="/css/jquery.ui.resizable.css">
   <script type="text/javascript">
-    score = {{ score }};
-    user_name = {% if user_name %}{{ user_name }}{% end %};
+    $(function(){
+    score = "{{ score }}";
+    user_name = "{% if user_name %}{{ user_name }}{% end %}";
+
+    sc = document.createElement('script');
+    sc.setAttribute('src','/static/js/piano_note_templ.js');
+    sc.setAttribute('type', 'text/javascript');
+    document.body.appendChild(sc);
+});
   </script>
 </head>
 <body>
@@ -23,27 +30,7 @@
 		<table id="piano-roll" border="0" cellpadding="0" cellspacing="0">
 		</table>
 	</div>
-	
-	<script type="text/x-jqote-template" id="piano-roll-template">
-	    <![CDATA[
-	    	<% for (key in this.keys) {%>
-				<tr class="piano-roll-row">
-					<td class="piano-roll-row-key">
-						<img src = '<%= "img/key" + this.keys[key] + ".png" %>'>
-					</td>
-					<td class="piano-roll-row-roll">
-					</td>
-				</tr>
-			<% } %>
-			<div class="piano-roll-play-cursor"></div>
-	    ]]>
-	</script>
-	
-	
-	<script type="text/x-jqote-template" id="piano-note-template">
-	    <![CDATA[
-	    	<div class = "piano-note <%= this.id %>" style = '<%= "width: " + this.width + "px; background-color: " + this.color %>'></div>
-	    ]]>
-	</script>
+
+  
 </body>
 </html>

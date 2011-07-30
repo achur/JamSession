@@ -64,3 +64,26 @@ function jss_getScore() {
 function jss_clearScore() {
     jss_sendPackage({'method': 'clearScore'});
 }
+	
+	<!-- <script type="text/x-jqote-template" id="piano-roll-template"> -->
+	<!--     <![CDATA[ -->
+	<!--     	<% for (key in this.keys) {%> -->
+	<!-- 			<tr class="piano-roll-row"> -->
+	<!-- 				<td class="piano-roll-row-key"> -->
+	<!-- 					<img src = '<%= "img/key" + this.keys[key] + ".png" %>'> -->
+	<!-- 				</td> -->
+	<!-- 				<td class="piano-roll-row-roll"> -->
+	<!-- 				</td> -->
+	<!-- 			</tr> -->
+	<!-- 		<% } %> -->
+	<!-- 		<div class="piano-roll-play-cursor"></div> -->
+	<!--     ]]> -->
+	<!-- </script> -->
+	
+	
+	<!-- <script type="text/x-jqote-template" id="piano-note-template"> -->
+	<!--     <![CDATA[ -->
+	<!--     	<div class = "piano-note <%= this.id %>" style = '<%= "width: " + this.width + "px; background-color: " + this.color %>'></div> -->
+	<!--     ]]> 
+	<!-- </script> -->
+  

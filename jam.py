@@ -153,7 +153,7 @@ class UnittestHandler(tornado.web.RequestHandler):
 
 class ScoreHandler(tornado.web.RequestHandler):
   def get(self, score):
-    v = {'score': score}
+    v = {'score': score, 'user_name': ''}
     self.render('index.html', **v)
 
 class Application(tornado.web.Application):
