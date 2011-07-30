@@ -7,7 +7,12 @@
 	<script src="/static/js/jquery/jquery.ui.widget.js"></script>
 	<script src="/static/js/jquery/jquery.ui.mouse.js"></script>
 	<script src="/static/js/jquery/jquery.ui.draggable.js"></script>
-	<script src="/static/js/jquery/jquery.ui.resizable.js"></script>	
+	<script src="/static/js/jquery/jquery.ui.resizable.js"></script>        
+	<script src="/static/js/jquery/jquery.jqote2.min.js"></script>
+	<script src="/static/js/JamAudio/lib/classy.js"></script>
+	<script src="/static/js/JamAudio/lib/dsp.js"></script>
+	<script src="/static/js/JamAudio/src/score.js"></script>
+	<script src="/static/js/JamAudio/src/player.js"></script>
 	<script src="/static/js/index.js"></script>
   <script src="/static/js/mustache.js"></script>
 	<!-- <script src="/static/js/jamsocket.js"></script> -->
@@ -17,7 +22,7 @@
     $(function(){
     score = "{{ score }}";
     user_name = "{% if user_name %}{{ user_name }}{% end %}";
-    });
+});
   </script>
 </head>
 <body>
@@ -25,6 +30,10 @@
 		<div class="piano-roll-play-cursor"></div>
 		<table id="piano-roll" border="0" cellpadding="0" cellspacing="0">
 		</table>
+	</div>
+	<div id="player-controls">
+		<img id="play-pause-button" src="/static/img/playbutton.png" onclick="togglePlaying(event)">
+		<img id="stop-button" src="/static/img/stopbutton.png" onclick="stopPlaying()">
 	</div>
 </body>
 </html>

@@ -8,12 +8,12 @@ var JamScorePlayer;
 	function constructStandardKitList(folder)
 	{
 		var toReturn = [];
-		toReturn.push("samples/" + folder + "/hihat.wav");
-		toReturn.push("samples/" + folder + "/kick.wav");
-		toReturn.push("samples/" + folder + "/snare.wav");
-		toReturn.push("samples/" + folder + "/tom1.wav");
-		toReturn.push("samples/" + folder + "/tom2.wav");
-		toReturn.push("samples/" + folder + "/tom3.wav");
+		toReturn.push("/static/js/JamAudio/samples/" + folder + "/hihat.wav");
+		toReturn.push("/static/js/JamAudio/samples/" + folder + "/kick.wav");
+		toReturn.push("/static/js/JamAudio/samples/" + folder + "/snare.wav");
+		toReturn.push("/static/js/JamAudio/samples/" + folder + "/tom1.wav");
+		toReturn.push("/static/js/JamAudio/samples/" + folder + "/tom2.wav");
+		toReturn.push("/static/js/JamAudio/samples/" + folder + "/tom3.wav");
 		return toReturn;
 	}
 	
@@ -23,6 +23,8 @@ var JamScorePlayer;
 		"R8": constructStandardKitList("R8"),
 		"bongos": constructStandardKitList("Bongos")
 	};
+	
+	console.log(kitLoops);
 	
 	var Synth = Class.$extend(
 	{
@@ -294,7 +296,7 @@ var JamScorePlayer;
 			this.score(score);
 			this.kitBox(new KitBox());
 			var self = this;
-			this.kitBox().loadKitsByNames(["acoustic", "techno", "R8", "bongos"], function() { self._ready = true; callbackFn() });
+			this.kitBox().loadKitsByNames(["acoustic", "techno", "R8", "bongos"], function() { self._ready = true; callbackFn(); });
 			this._ready = false;
 			this._playing = false;
 		},

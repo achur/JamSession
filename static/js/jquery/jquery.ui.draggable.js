@@ -174,7 +174,8 @@ $.widget("ui.draggable", $.ui.mouse, {
 
 		//Compute the helpers position
 		this.position = this._generatePosition(event, true);
-		this.position.top += this.offsetParent[0].scrollTop;
+		this.position.top += this.offsetParent[0].scrollTop > this.offsetParent[0].scrollHeight ? 
+			this.offsetParent[0].scrollHeight : this.offsetParent[0].scrollTop;
 		this.position.left += this.offsetParent[0].scrollLeft;
 		this.positionAbs = this._convertPositionTo("absolute");
 

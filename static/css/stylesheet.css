@@ -38,13 +38,13 @@
 
 .piano-roll-row td
 {
-	height: 12px;
 	display: inline-block;
 }
 
 .piano-roll-row-key
 {
 	width: 90px;
+	height: 12px;
 }
 
 .piano-roll-row-roll
@@ -52,12 +52,23 @@
 	width: 890px;
 	margin-left: -2px;
 	border: 1px solid black;
+	height: 10px;
 }
 
 .piano-note
 {
-	height: 12px;
-	position: absolute;
+	height: 11px;
+	position: absolute !important;
 	left: 86px;
 	top: 6px;
+}
+
+#player-controls
+{
+	margin-left: 440px;
+}
+
+#player-controls img
+{
+	cursor: pointer;
 }
