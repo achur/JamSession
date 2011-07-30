@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js">
+    </script>
+  <script src="http://cdn.socket.io/stable/socket.io.js"></script>
+  <script>
+    window.onload = function() {
+
+      var s = new io.Socket(window.location.hostname,
+          {port : 8888, 
+           rememberTransport : false,
+           resource: 'JamSessionSocket/' + score + '-' + user_name});
+
+      s.connect();
+
+      s.addEvent('connect', function(data) {
+        console.log(data)
+      });
+
+      s.addEvent('message', function(data) {
+        data = JSON.parse(data);
+        if (data['type'] == 'chat_message') showMessage(data);
+        else if (data['type'] == 'update_player') updatePlayer(data);
+        else if (data['type'] == 'add_paths') addPaths(data.paths);
+        else if (data['type'] == 'clear_paths') clearCanvas();
+      });
+
+      //send the message when submit is clicked
+      $('#chatform').submit(function (evt) {
+        var method = $('#method').val()
+        var note = $('#note').val()
+        var measureBlock = $('#measureBlock').val()
+
+        $('#method').val('')
+        $('#note').val('')
+        $('#measureBlock').val('')
+
+        s.send(JSON.stringify({'method': method, 'note': note,
+                               'measureBlock': measureBlock}));
+        return false;
+      });
+    };
+</script>
+</head>
+<body>
+<h3>Chat!</h3>
+<div id="chat" style="width: 60em; height: 20em; overflow:auto; border: 1px solid black">
+</div>
+<form id="chatform">
+Method: <input type="text" id="method"/><br />
+Note: <input type="text" id="note"/><br />
+MeasureBlock: <input type="text" id="measureBlock"/><br />
+<input type="submit" />
+</form>
+</body>
+</html>
+
