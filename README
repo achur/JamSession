@@ -1,0 +1,4 @@
+A big fat audio hack for the LinkedIn intern hackday.
+
+Credits go to google's open-source WebAudio tutorials, from which we
+took the drum kit sounds in this repo.  Also to DSP.js and classy.js.
